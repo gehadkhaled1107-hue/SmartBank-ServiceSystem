@@ -1,31 +1,82 @@
-#users data
-users = [
+user_data = [
     {
         "id": 1,
-        "profile": {"name": "Amr", "password": "1234", "phone": "01011111111",
-                     "email": "amr@test.com", "gender": "male", "age": 22,
-                     "city": "Cairo", "account_type": "business"},
-        "wallet": {"balance_egp": 6000},
+        "profile": {
+            "name": "Amr",
+            "phone": "01011111111",
+            "email": "amr@test.com",
+            "gender": "male",
+            "age": 22,
+            "city": "Cairo",
+            "account_type": "business"
+            },
+        "security": {
+            "password": "1234",
+            "failed_attempts": 0,
+            "is_locked": False
+            },
+        "wallet": {
+            "balance_egp": 6000
+            },
         "transactions": [],
-        "settings": {"failed_attempts": 0, "emergency_contact": None},
+        "settings": {
+            "emergency_contact": []
+            },
+        "login_attempts": []
     },
     {
         "id": 2,
-        "profile": {"name": "Gehad", "password": "1234", "phone": "01022222222",
-                     "email": "gehad@test.com", "gender": "female", "age": 22,
-                     "city": "Giza", "account_type": "personal"},
-        "wallet": {"balance_egp": 1500},
+        "profile": {
+            "name": "Gehad",
+            "phone": "01022222222",
+            "email": "gehad@test.com",
+            "gender": "female",
+            "age": 22,
+            "city": "Giza",
+            "account_type": 
+            "personal"
+            },
+        "security": {
+            "password": "1234",
+            "failed_attempts": 0,
+            "is_locked": False
+        },
+        "wallet": {
+            "balance_egp": 1500
+            },
         "transactions": [],
-        "settings": {"failed_attempts": 0, "emergency_contact": None},
+        "settings": {
+            "emergency_contact": []
+            },
+        "login_attempts": []
     },
     {
         "id": 3,
-        "profile": {"name": "Raghd", "password": "1234", "phone": "01033333333",
-                     "email": "raghd@test.com", "gender": "female", "age": 22,
-                     "city": "Alexandria", "account_type": "personal"},
-        "wallet": {"balance_egp": 200},
+        "profile": {
+            "name": "Raghd",
+            "phone": "01033333333",
+            "email": "raghd@test.com",
+            "gender": "female",
+            "age": 22,
+            "city": "Alexandria",
+            "account_type": "personal"
+            },
+        "security": {
+            "password": "1234",
+            "failed_attempts": 0,
+            "is_locked": False
+            },
+        "wallet": {
+            "balance_egp": 200
+            },
         "transactions": [],
-        "settings": {"failed_attempts": 0, "emergency_contact": None},
+        "settings": {
+            "emergency_contact": []
+            },
+        "login_attempts": []
     },
 ]
+
+users_id_counter = 3
+current_user = None
 
