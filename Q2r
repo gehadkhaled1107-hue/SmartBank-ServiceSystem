@@ -1,0 +1,287 @@
+ # menu
+
+ while True:
+ 
+     print(f"*************** Welcome back {current_user['profile']['name']} ***************")
+     print("[0] Deposit")
+     print("[1] Withdraw")
+     print("[2] Transfer")
+     print("[3] Transaction history")
+     print("[4] Reports")
+     print("[5] Branch/ATM status")
+     print("[6] Update personal info")
+     print("[7] Exit")
+
+     choice = input("\n> ").strip()
+
+     # deposit 
+     if choice == "0":
+         print()
+         print("========== DEPOSIT ==========")
+         user_input = input("Enter amount and currency, example: 20 USD: ")
+         parts = user_input.split()
+
+         if len(parts) != 2:
+             print("Invalid format!")
+             print("Example: 20 USD")
+             continue
+
+         try:
+             amount = float(parts[0])
+         except ValueError:
+             print("Please enter a valid number!")
+             continue
+
+         currency = parts[1].upper()
+
+         if amount <= 0:
+             print("Amount must be positive!")
+             continue
+
+         if currency not in ["EGP", "USD", "SAR"]:
+             print("Unsupported currency!")
+             print("Allowed currencies: EGP, USD, SAR")
+             continue
+
+         if currency == "EGP":
+             egp_amount = amount
+         elif currency == "USD":
+             egp_amount = amount * 30
+         else:
+             egp_amount = amount * 9
+
+         current_user["wallet"]["balance_egp"] += egp_amount
+         current_user["transactions"].append(f"Deposited {amount} {currency}")
+
+         print()
+         print("Deposit successful!")
+         print("Added:", egp_amount, "EGP")
+         print("Current balance:", current_user["wallet"]["balance_egp"], "EGP")
+
+     # withdraw
+     elif choice == "1":
+    
+         print("========== WITHDRAW ==========")
+         user_input = input("Enter amount and currency, example: 20 USD: ")
+         parts = user_input.split()
+
+         if len(parts) != 2:
+             print("Invalid format!")
+             print("Example: 20 USD")
+             continue
+
+         try:
+             amount = float(parts[0])
+         except ValueError:
+             print("Please enter a valid number!")
+             continue
+
+         currency = parts[1].upper()
+
+         if amount <= 0:
+             print("Amount must be positive!")
+             continue
+
+         if currency not in ["EGP", "USD", "SAR"]:
+             print("Unsupported currency!")
+             print("Allowed currencies: EGP, USD, SAR")
+             continue
+
+         if currency == "EGP":
+             egp_amount = amount
+         elif currency == "USD":
+             egp_amount = amount * 30
+         else:
+             egp_amount = amount * 9
+
+         if egp_amount > current_user["wallet"]["balance_egp"]:
+             print("Insufficient balance!")
+             print("Your balance is:", current_user["wallet"]["balance_egp"], "EGP")
+             continue
+
+         current_user["wallet"]["balance_egp"] -= egp_amount
+         current_user["transactions"].append(f"Withdrew {amount} {currency}")
+
+         print()
+         print("Withdrawal successful!")
+         print("Removed:", egp_amount, "EGP")
+         print("Current balance:", current_user["wallet"]["balance_egp"], "EGP")
+
+     # transfer 
+     elif choice == "2":
+     
+         print("========== TRANSFER ==========")
+
+         try:
+             receiver_id = int(input("Enter receiver ID: "))
+         except ValueError:
+             print("Invalid receiver ID!")
+             continue
+
+         receiver = None
+         for user in user_data:
+             if user["id"] == receiver_id:
+                 receiver = user
+                 break
+
+         if receiver is None:
+             print("Receiver not found!")
+             continue
+
+         if receiver["id"] == current_user["id"]:
+             print("You cannot transfer money to yourself!")
+             continue
+
+         user_input = input("Enter amount and currency, example: 20 USD: ")
+         parts = user_input.split()
+
+         if len(parts) != 2:
+             print("Invalid format!")
+             print("Example: 20 USD")
+             continue
+
+         try:
+             amount = float(parts[0])
+         except ValueError:
+             print("Please enter a valid number!")
+             continue
+
+         currency = parts[1].upper()
+
+         if amount <= 0:
+             print("Amount must be positive!")
+             continue
+
+         if currency not in ["EGP", "USD", "SAR"]:
+             print("Unsupported currency!")
+             print("Allowed currencies: EGP, USD, SAR")
+             continue
+
+         if currency == "EGP":
+             egp_amount = amount
+         elif currency == "USD":
+             egp_amount = amount * 30
+         else:
+             egp_amount = amount * 9
+
+         if egp_amount > current_user["wallet"]["balance_egp"]:
+             print("Insufficient balance!")
+             print("Your balance is:", current_user["wallet"]["balance_egp"], "EGP")
+             continue
+
+         current_user["wallet"]["balance_egp"] -= egp_amount
+         receiver["wallet"]["balance_egp"] += egp_amount
+
+         current_user["transactions"].append(
+             f"Transferred {amount} {currency} to {receiver['profile']['name']}"
+         )
+         receiver["transactions"].append(
+             f"Received {amount} {currency} from {current_user['profile']['name']}"
+         )
+
+         print()
+         print("Transfer successful!")
+         print("Transferred to:", receiver["profile"]["name"])
+         print("Amount:", amount, currency)
+         print("Current balance:", current_user["wallet"]["balance_egp"], "EGP")
+
+     # TRANSACTION HISTORY 
+     elif choice == "3":
+      
+         print("========== TRANSACTION HISTORY ==========")
+
+         transactions = current_user["transactions"]
+
+         if len(transactions) == 0:
+             print("No transactions yet!")
+         else:
+             print()
+             print("First transaction:")
+             print(transactions[0])
+
+             print()
+             print("Last transaction:")
+             print(transactions[-1])
+
+             print()
+             print("Last 5 transactions:")
+             for transaction in transactions[-5:]:
+                 print("-", transaction)
+
+     # report 
+     elif choice == "4":
+    
+         print("========== REPORTS ==========")
+         print("User ID:", current_user["id"])
+         print("Name:", current_user["profile"]["name"])
+         print("Account type:", current_user["profile"]["account_type"])
+         print("City:", current_user["profile"]["city"])
+         print("Current balance:", current_user["wallet"]["balance_egp"], "EGP")
+         print("Number of transactions:", len(current_user["transactions"]))
+
+     # BRANCH / ATM STATUS
+     elif choice == "5":
+    
+         print("========== BRANCH / ATM STATUS ==========")
+         print("Main branch: Open")
+         print("ATM: Available")
+
+     #  update info 
+     elif choice == "6":
+     
+         print("========== UPDATE PERSONAL INFO ==========")
+         print("1. Name")
+         print("2. Phone")
+         print("3. Email")
+         print("4. City")
+
+         info_choice = input("Choose what to update: ")
+
+         if info_choice == "1":
+             new_name = input("Enter new name: ")
+             if new_name == "":
+                 print("Name cannot be empty!")
+             else:
+                 current_user["profile"]["name"] = new_name
+                 print("Name updated successfully!")
+
+         elif info_choice == "2":
+             new_phone = input("Enter new phone: ")
+             if new_phone == "":
+                 print("Phone cannot be empty!")
+             else:
+                 current_user["profile"]["phone"] = new_phone
+                 print("Phone updated successfully!")
+
+         elif info_choice == "3":
+             new_email = input("Enter new email: ")
+             if new_email == "":
+                 print("Email cannot be empty!")
+             else:
+                 current_user["profile"]["email"] = new_email
+                 print("Email updated successfully!")
+
+         elif info_choice == "4":
+             new_city = input("Enter new city: ")
+             if new_city == "":
+                 print("City cannot be empty!")
+             else:
+                 current_user["profile"]["city"] = new_city
+                 print("City updated successfully!")
+
+         else:
+             print("Invalid choice!")
+
+     #  exit
+     elif choice == "7":
+     
+         print("Thank you for using our wallet,", current_user["profile"]["name"] + "!")
+         print("Logged out successfully.")
+         break
+
+     #  INVALID MENU CHOICE 
+     else:
+         print("Invalid choice!")
+         print("Please choose a number from 0 to 7.")
+
+ break
