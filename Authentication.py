@@ -83,13 +83,16 @@ user_data = [
 
 next_user_id = 4
 
-print("*************** SIC SMART BANK SYSTEM ***************\n\
+main_menu = "*************** SIC SMART BANK SYSTEM ***************\n\
 If you already have an account, enter login\n\
 If you do not have an account, enter register\n\
-To close the system, enter exit\n")
+To close the system, enter exit\n"
+
+
 
 
 while True:
+    print(f"\n{main_menu}\n")
     current_user = None
     failed_attempts = 0
 
@@ -101,136 +104,150 @@ while True:
     # Login by ID
     if operation == "login":
         is_login_canceled = False
-        login_method = input("Login by ID or Email or Exit > (or type 'exit' to cancel) > ").lower().replace(" ", "")
 
-        if login_method == "exit":
-            print("Returning to main menu...")
-            continue
+        while True:
+            login_method = input("Login by ID or Email or Exit > (or type 'exit' to cancel) > ").lower().replace(" ", "")
 
-        if login_method == "id":
-            while failed_attempts != 3:
-                user_id = input("Enter your account id > ")
+            if login_method == "exit":
+                print("Returning to main menu...")
+                break
 
-                if user_id.lower() == "exit":
-                    print("Returning to main menu...")
-                    is_login_canceled = True
-                    break
-
-                try:
-                    user_id = int(user_id)
-                except ValueError:
-                    print("Invalid input! ID must be a number.")
-                    failed_attempts+=1
-                    continue
-
-                for user in user_data:
-                    if user["id"] == user_id:
-                        current_user = user
-                        break
-
-                if current_user != None:
-                    print(f"Account found: {current_user['profile']['name']}")
-                    break
-                else:
-                    failed_attempts+=1
-                    if failed_attempts < 3:
-                        trials = input("Invalid account id\n Want to try again (yes/no) > ").strip().lower()
-                        if trials in ["n", "no"]:
-                            print("You exit successfully")
-                            break
-                    else:
-                        print("Too many failed attempts!")
-
-        # Login by Email
-        elif login_method == "email":
-            while failed_attempts != 3:
-                user_email = input("Enter your account email > ").lower().replace(" ", "")
-
-                if user_email == "exit":
-                    print("Returning to main menu...")
-                    is_login_canceled = True
-                    break
-
-                for user in user_data :
-                    if user_email == user["profile"]["email"]:
-                        current_user = user
-                        break
-
-                if current_user != None:
-                    print(f"Account found: {current_user['profile']['name']}")
-                    break
-                else:
-                    failed_attempts+=1
-                    if failed_attempts < 3:
-                        trials = input("Invalid account email\n Want to try again (yes/no) > ").strip().lower()
-                        if trials in ["n", "no"]:
-                            print("You exit successfully")
-                            break
-                    else:
-                        print("Too many failed attempts!")
-        else:
-            print("Invalid choice! Please type 'id' or 'email'.")
-
-        if is_login_canceled:
-            continue
-
-        # Password
-        if current_user != None:
-            if current_user["security"]["is_locked"] == True:
-                current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-                current_user["login_attempts"].append(f"Login Denied (Account Locked) at {current_time}")
-                print("Your account is locked")
-            else:
+            elif login_method == "id":
                 while failed_attempts != 3:
-                    user_password = input("Enter your account password > (or type 'exit' to cancel) >").strip()
+                    user_id = input("Enter your account id > ")
 
-                    if user_password.lower() == "exit":
+                    if user_id.lower() == "exit":
                         print("Returning to main menu...")
                         is_login_canceled = True
                         break
 
-                    if current_user["security"]["password"] == user_password:
-                        current_user["security"]["failed_attempts"] = 0
-                        print(f"Logged in seccessfully {current_user['profile']['name']}\n")
-                        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-                        current_user["login_attempts"].append(f"Success Login at {current_time}")
-
-                        recent_attempts = current_user["login_attempts"][-3:]
-                        print(f"Recent Login History: {recent_attempts}")
-
-                        while True:
-
-                            """
-                             TODO: Wallet&Transactions menu options go here
-
-                            ### Note for Wallet & Reports :
-                            - The post-login session inside `main.py` is currently using a **temporary placeholder/stub menu** (Option 1). 
-                            - Shared global state variables used: `user_data`, `next_user_id`, and `current_user`.
-                            - You can plug your Wallet & Transactions loop directly into this post-login section.
-
-                            """
-
-                            user_action = input("Logged in Menu -> Type 'logout' to exit session: ").strip().lower()
-                            if user_action == "logout":
-                                print("Logged out successfully.")
-                                break
-                            else:
-                                print("Invalid option. Type 'logout' to exit.")
-                        break
-
-                    else:
-                        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-                        current_user["login_attempts"].append(f"Failed Login at {current_time}")
+                    try:
+                        user_id = int(user_id)
+                    except ValueError:
+                        print("Invalid input! ID must be a number.")
                         failed_attempts+=1
-                        current_user["security"]["failed_attempts"] = failed_attempts
+                        continue
+
+                    for user in user_data:
+                        if user["id"] == user_id:
+                            current_user = user
+                            break
+
+                    if current_user != None:
+                        print(f"Account found: {current_user['profile']['name']}")
+                        break
+                    else:
+                        failed_attempts+=1
                         if failed_attempts < 3:
-                            trials = input("Wrong password\n Want to try again (yes/no) > ").strip().lower()
+                            trials = input("Invalid account id\n Want to try again (yes/no) > ").strip().lower()
                             if trials in ["n", "no"]:
                                 print("You exit successfully")
+                                is_login_canceled = True
                                 break
                         else:
                             print("Too many failed attempts!")
-                            current_user["security"]["is_locked"] = True
+                            is_login_canceled = True
+                            break
+
+            # Login by Email
+            elif login_method == "email":
+                while failed_attempts != 3:
+                    user_email = input("Enter your account email > ").lower().replace(" ", "")
+
+                    if user_email == "exit":
+                        print("Returning to main menu...")
+                        is_login_canceled = True
+                        break
+
+                    for user in user_data :
+                        if user_email == user["profile"]["email"]:
+                            current_user = user
+                            break
+
+                    if current_user != None:
+                        print(f"Account found: {current_user['profile']['name']}")
+                        break
+                    else:
+                        failed_attempts+=1
+                        if failed_attempts < 3:
+                            trials = input("Invalid account email\n Want to try again (yes/no) > ").strip().lower()
+                            if trials in ["n", "no"]:
+                                print("You exit successfully")
+                                is_login_canceled = True
+                                break
+                        else:
+                            print("Too many failed attempts!")
+                            is_login_canceled = True
+                            break
+            else:
+                print("Invalid choice! Please type 'id' or 'email'.")
+
+            if is_login_canceled:
+                break
+
+            # Password
+            if current_user != None:
+                if current_user["security"]["is_locked"] == True:
+                    current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+                    current_user["login_attempts"].append(f"Login Denied (Account Locked) at {current_time}")
+                    print("Your account is locked")
+                    is_login_canceled = True
+                else:
+                    while failed_attempts != 3:
+                        user_password = input("Enter your account password > (or type 'exit' to cancel) >").strip()
+
+                        if user_password.lower() == "exit":
+                            print("Returning to main menu...")
+                            is_login_canceled = True
+                            break
+
+                        if current_user["security"]["password"] == user_password:
+                            current_user["security"]["failed_attempts"] = 0
+                            print(f"Logged in seccessfully {current_user['profile']['name']}\n")
+                            current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+                            current_user["login_attempts"].append(f"Success Login at {current_time}")
+
+                            recent_attempts = current_user["login_attempts"][-3:]
+                            print(f"Recent Login History: {recent_attempts}")
+
+                            while True:
+
+                                """
+                                TODO: Wallet&Transactions menu options go here
+
+                                ### Note for Wallet & Reports :
+                                - The post-login session inside `main.py` is currently using a **temporary placeholder/stub menu** (Option 1). 
+                                - Shared global state variables used: `user_data`, `next_user_id`, and `current_user`.
+                                - You can plug your Wallet & Transactions loop directly into this post-login section.
+
+                                """
+
+                                user_action = input("Logged in Menu -> Type 'logout' to exit session: ").strip().lower()
+                                if user_action == "logout":
+                                    print("Logged out successfully.")
+                                    is_login_canceled = True
+                                    break
+                                else:
+                                    print("Invalid option. Type 'logout' to exit.")
+                            break
+
+                        else:
+                            current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+                            current_user["login_attempts"].append(f"Failed Login at {current_time}")
+                            failed_attempts+=1
+                            current_user["security"]["failed_attempts"] = failed_attempts
+                            if failed_attempts < 3:
+                                trials = input("Wrong password\n Want to try again (yes/no) > ").strip().lower()
+                                if trials in ["n", "no"]:
+                                    print("You exit successfully")
+                                    is_login_canceled = True
+                                    break
+                            else:
+                                print("Too many failed attempts!")
+                                is_login_canceled = True
+                                current_user["security"]["is_locked"] = True
+                if is_login_canceled:
+                    break
 
 
     elif operation == "register":
@@ -430,6 +447,11 @@ while True:
                 "login_attempts": []
             }
 
+            """
+            Using deepcopy to create an independent copy of the user dictionary, 
+            ensuring that nested objects/data inside new_user are completely isolated 
+            from future modifications when stored in user_data.
+            """
             final_user_record = copy.deepcopy(new_user)
 
             user_data.append(final_user_record)
