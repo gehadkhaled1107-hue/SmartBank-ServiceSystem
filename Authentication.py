@@ -279,8 +279,8 @@ while True:
                 print("Password cannot be empty!")
                 continue
 
-            if len(user_password) < 6:
-                print("Password too short! Must be at least 6 characters long.")
+            if len(user_password) < 4:
+                print("Password too short! Must be at least 4 characters long.")
                 continue
             break
 
