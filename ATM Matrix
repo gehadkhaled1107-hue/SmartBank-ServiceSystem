@@ -1,0 +1,42 @@
+def print_atm_matrix():
+    print("\n*************** ATM Availability ***************")
+
+    num_cols = max(len(row) for row in atm_matrix)
+    header = "      " + "".join(f"C{c:<3}" for c in range(num_cols))
+    print(header)
+
+    for r, row in enumerate(atm_matrix):
+        line = f"Row {r} "
+        for c in range(num_cols):
+            if c < len(row):
+                line += f" {row[c]:<3}"
+            else:
+                line += "  -  "
+        print(line)
+
+    available = sum(cell for row in atm_matrix for cell in row)
+    total = sum(len(row) for row in atm_matrix)
+    print(f"\nAvailable ATMs: {available}")
+    print(f"Out of service: {total - available}")
+
+
+def update_atm_status():
+    print_atm_matrix()
+    try:
+        row = int(input("Update ATM? row= ").strip())
+        col = int(input("col= ").strip())
+        status = int(input("new status (1=available, 0=out of service)= ").strip())
+    except ValueError:
+        print("Row, column and status must be numbers.")
+        return
+
+    if row < 0 or row >= len(atm_matrix) or col < 0 or col >= len(atm_matrix[row]):
+        print("Invalid row/column for the current matrix shape.")
+        return
+
+    if status not in (0, 1):
+        print("Status must be 0 or 1.")
+        return
+
+    atm_matrix[row][col] = status
+    print(f"ATM at row={row}, col={col} updated to status={status}.")
