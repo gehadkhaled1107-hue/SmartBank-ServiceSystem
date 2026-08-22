@@ -1,0 +1,76 @@
+def update_personal_info(user):
+    while True:
+        print("\n*************** Update Personal Information ***************")
+        print("[0] Change city")
+        print("[1] Change phone number")
+        print("[2] Change password")
+        print("[3] Add emergency contact")
+        print("[4] Remove optional field")
+        print("[5] Show my profile")
+        print("[6] Back")
+
+        choice = input("> ").strip()
+
+        if choice in ("0", "1", "2", "3", "4"):
+            snapshot = copy.deepcopy(user["profile"])
+            user["settings"]["last_snapshot"] = snapshot
+            print("Profile snapshot saved before changes.")
+
+        if choice == "0":
+            new_city = input("New city: ").strip()
+            user["profile"].update({"city": new_city})
+            print("City updated successfully.")
+
+        elif choice == "1":
+            new_phone = input("New phone: ").strip()
+            user["profile"]["phone"] = new_phone
+            print("Phone number updated successfully.")
+
+        elif choice == "2":
+            new_password = input("New password: ").strip()
+            user["security"]["password"] = new_password
+            print("Password updated successfully.")
+
+        elif choice == "3":
+            contact = input("Emergency contact (name & phone): ").strip()
+            user["settings"]["emergency_contact"].append(contact)
+            print("Emergency contact added successfully.")
+
+        elif choice == "4":
+            field = input("Which do you want to clear? (emergency_contact/last_snapshot): ").strip()
+            if field == "emergency_contact":
+                if user["settings"]["emergency_contact"]:
+                    removed = user["settings"]["emergency_contact"].pop()
+                    print(f"Removed last emergency contact: {removed}")
+                else:
+                    print("No emergency contacts to remove.")
+            else:
+                removed = user["settings"].pop(field, None)
+                if removed is not None:
+                    print(f"Removed field '{field}'.")
+                else:
+                    print("Field not found or already empty.")
+
+        elif choice == "5":
+            show_profile(user)
+
+        elif choice == "6":
+            break
+        else:
+            print("Invalid choice, please try again.")
+
+
+def show_profile(user):
+    print("\n--- Profile ---")
+    for key, value in user["profile"].items():
+        print(f"  {key}: {value}")
+    print(f"  balance_egp: {round(user['wallet']['balance_egp'], 2)}")
+    print(f"  emergency_contacts: {user['settings']['emergency_contact']}")
+
+
+def admin_report_all_users():
+    print("\n--- All Users (Admin Report) ---")
+    for u in user_data:
+        uid = u["id"]
+        name = u["profile"]["name"]
+        print(f"  ID: {uid} | Name: {name}")
