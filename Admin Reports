@@ -1,0 +1,101 @@
+def duplicate_check_report():
+    seen_phones = {}
+    seen_emails = {}
+    dup_phones = set()
+    dup_emails = set()
+
+    for u in user_data:
+        phone = u["profile"]["phone"]
+        email = u["profile"]["email"]
+
+        if phone in seen_phones:
+            dup_phones.add(phone)
+
+        seen_phones[phone] = seen_phones.get(phone, 0) + 1
+
+        if email in seen_emails:
+            dup_emails.add(email)
+
+        seen_emails[email] = seen_emails.get(email, 0) + 1
+
+    print("\n--- Duplicate Detection ---")
+    print(f"Duplicate phone numbers: {dup_phones if dup_phones else 'None'}")
+    print(f"Duplicate emails: {dup_emails if dup_emails else 'None'}")
+
+
+def transaction_frequency_report():
+    frequency = defaultdict(int)
+
+    for u in user_data:
+        for t in u["transactions"]:
+            frequency[t["type"]] += 1
+
+    print("\n--- Transaction Frequency Report ---")
+
+    if not frequency:
+        print("No transactions recorded yet.")
+        return
+
+    for tx_type, count in frequency.items():
+        print(f"  {tx_type}: {count}")
+
+
+def user_segment_report():
+    print("\n--- User Segment Report ---")
+    print(f"Active users: {active_users if active_users else 'None'}")
+    print(f"VIP users: {vip_users if vip_users else 'None'}")
+    print(f"Users with failed logins: {failed_login_users if failed_login_users else 'None'}")
+    print(f"Users with transfers: {users_with_transfers if users_with_transfers else 'None'}")
+
+
+def vip_vs_active_analysis():
+    print("\n--- VIP vs Active Users Analysis ---")
+    print(f"Active users: {active_users}")
+    print(f"VIP users: {vip_users}")
+    print(f"Active VIP users: {active_users & vip_users}")
+    print(f"Active but not VIP: {active_users - vip_users}")
+    print(f"VIP but not active: {vip_users - active_users}")
+    print(f"Union (active or VIP): {active_users | vip_users}")
+    print(f"Symmetric difference: {active_users ^ vip_users}")
+
+
+def membership_test():
+    id_raw = input("Enter user ID to check segment membership: ").strip()
+
+    if not id_raw.isdigit():
+        print("Invalid ID.")
+        return
+
+    uid = int(id_raw)
+
+    print(f"  In active_users: {uid in active_users}")
+    print(f"  In vip_users: {uid in vip_users}")
+    print(f"  Not in failed_login_users: {uid not in failed_login_users}")
+
+
+def admin_reports_menu():
+    while True:
+        print("\n**************** Admin Reports ****************")
+        print("[0] Duplicate phone/email check")
+        print("[1] Transaction frequency report")
+        print("[2] User segment report")
+        print("[3] VIP vs active users analysis")
+        print("[4] Membership test for a user")
+        print("[5] Back")
+
+        choice = input("> ").strip()
+
+        if choice == "0":
+            duplicate_check_report()
+        elif choice == "1":
+            transaction_frequency_report()
+        elif choice == "2":
+            user_segment_report()
+        elif choice == "3":
+            vip_vs_active_analysis()
+        elif choice == "4":
+            membership_test()
+        elif choice == "5":
+            break
+        else:
+            print("Invalid choice, please try again.")
