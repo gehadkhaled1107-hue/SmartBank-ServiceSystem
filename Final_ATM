@@ -717,7 +717,10 @@ while True:
                                     break
                                 else:
                                     print("Invalid choice!")
-                                    print("Please choose a number from 0 to 7.")
+                                    if current_user["profile"]["account_type"] == "admin":
+                                        print("Please choose a number from 0 to 7.")
+                                    else:
+                                        print("Please choose a number from 0 to 6.")
                             break
 
                         else:
