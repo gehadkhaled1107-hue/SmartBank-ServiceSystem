@@ -1,5 +1,4 @@
-
-
+import json
 import time
 import copy
 from collections import defaultdict
@@ -87,6 +86,19 @@ user_data = [
 ]
 
 next_user_id = 4
+
+
+#BONUS
+user_data_file = "userData.json"
+try:
+    with open(user_data_file, "r") as data:
+        loaded_data = json.load(data)
+        user_data = loaded_data["users"]
+        next_user_id = loaded_data["next_id"]
+except Exception:
+    pass
+
+
 
 # Sets used for report / segment analysis (Q5 - Amr)
 active_users = set()          # users who logged in successfully at least once
@@ -952,6 +964,11 @@ while True:
             next_user_id += 1
 
     elif operation == "exit":
+        try:
+            with open(user_data_file, "w") as data:
+                json.dump({"users": user_data, "next_id": next_user_id}, data, indent="\t")
+        except Exception:
+            print("Could not save data.")
         break
 
     else:
