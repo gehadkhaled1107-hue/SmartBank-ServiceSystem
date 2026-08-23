@@ -89,7 +89,7 @@ next_user_id = 4
 
 
 #BONUS
-user_data_file = "userData.json"
+user_data_file = "bank_data.json"
 try:
     with open(user_data_file, "r") as data:
         loaded_data = json.load(data)
@@ -964,6 +964,7 @@ while True:
             next_user_id += 1
 
     elif operation == "exit":
+        #BONUS
         try:
             with open(user_data_file, "w") as data:
                 json.dump({"users": user_data, "next_id": next_user_id}, data, indent="\t")

@@ -34,7 +34,7 @@
 				"gender": "female",
 				"age": 22,
 				"city": "Giza",
-				"account_type": "personal"
+				"account_type": "admin"
 			},
 			"security": {
 				"password": "1234",
@@ -74,7 +74,57 @@
 				"emergency_contact": []
 			},
 			"login_attempts": []
+		},
+		{
+			"id": 4,
+			"profile": {
+				"name": "khaled",
+				"phone": "01200000000",
+				"email": "khaled@gmail.com",
+				"gender": "male",
+				"age": 50,
+				"city": "Cairo",
+				"account_type": "personal"
+			},
+			"security": {
+				"password": "0000",
+				"failed_attempts": 0,
+				"is_locked": false
+			},
+			"wallet": {
+				"balance_egp": 0.0
+			},
+			"transactions": [],
+			"settings": {
+				"emergency_contact": []
+			},
+			"login_attempts": []
+		},
+		{
+			"id": 5,
+			"profile": {
+				"name": "malek",
+				"phone": "01555555555",
+				"email": "malek@gmail.com",
+				"gender": "male",
+				"age": 27,
+				"city": "Cairo",
+				"account_type": "business"
+			},
+			"security": {
+				"password": "5555",
+				"failed_attempts": 0,
+				"is_locked": false
+			},
+			"wallet": {
+				"balance_egp": 0.0
+			},
+			"transactions": [],
+			"settings": {
+				"emergency_contact": []
+			},
+			"login_attempts": []
 		}
 	],
-	"next_id": 4
+	"next_id": 6
 }
