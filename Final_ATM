@@ -43,7 +43,7 @@ user_data = [
             "gender": "female",
             "age": 22,
             "city": "Giza",
-            "account_type": "personal"
+            "account_type": "admin"
             },
         "security": {
             "password": "1234",
@@ -451,10 +451,16 @@ while True:
                                 print("[1] Withdraw")
                                 print("[2] Transfer")
                                 print("[3] Transaction history")
-                                print("[4] Reports")
-                                print("[5] Branch/ATM status")
-                                print("[6] Update personal info")
-                                print("[7] Logout")
+                                if current_user["profile"]["account_type"] == "admin":
+                                    print("[4] Branch/ATM status")
+                                    print("[5] Update personal info")
+                                    print("[6] Reports")
+                                    print("[7] Logout")
+                                elif current_user["profile"]["account_type"] == "personal" or\
+                                      current_user["profile"]["account_type"] == "business":
+                                    print("[4] Branch/ATM status")
+                                    print("[5] Update personal info")
+                                    print("[6] Logout")
 
                                 wallet_choice = input("\n> ").strip()
 
@@ -681,29 +687,34 @@ while True:
                                         for t in transactions[-5:]:
                                             print(f"- {t['date']} | {t['type']} | {t['amount_egp']} EGP")
 
-                                # reports (Q5 - Amr's admin reports menu)
-                                elif wallet_choice == "4":
-                                    admin_reports_menu()
-
                                 # branch / ATM status (Q3 - Amr's ATM matrix)
-                                elif wallet_choice == "5":
+                                elif wallet_choice == "4":
                                     print_atm_matrix()
-                                    if current_user["profile"]["account_type"] == "business":
+                                    if current_user["profile"]["account_type"] == "admin":
                                         edit = input("Update an ATM status? (y/n): ").strip().lower()
                                         if edit == "y":
                                             update_atm_status()
 
                                 # update personal info (Q4 - Amr's version)
-                                elif wallet_choice == "6":
+                                elif wallet_choice == "5":
                                     update_personal_info(current_user)
 
+                                # reports (Q5 - Amr's admin reports menu)
+                                elif wallet_choice == "6" and current_user["profile"]["account_type"] == "admin":
+                                    admin_reports_menu()
+
                                 # logout
-                                elif wallet_choice == "7":
+                                elif wallet_choice == "6" and not current_user["profile"]["account_type"] == "admin" :
                                     print("Thank you for using our wallet,", current_user["profile"]["name"] + "!")
                                     print("Logged out successfully.")
                                     is_login_canceled = True
                                     break
 
+                                elif wallet_choice == "7" and current_user["profile"]["account_type"] == "admin" :
+                                    print("Thank you for using our wallet,", current_user["profile"]["name"] + "!")
+                                    print("Logged out successfully.")
+                                    is_login_canceled = True
+                                    break
                                 else:
                                     print("Invalid choice!")
                                     print("Please choose a number from 0 to 7.")
