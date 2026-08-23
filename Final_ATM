@@ -1,0 +1,945 @@
+
+
+import time
+import copy
+from collections import defaultdict
+
+# ==================================================================
+# GLOBAL DATA STRUCTURES  (shared by the whole team)
+# ==================================================================
+
+user_data = [
+    {
+        "id": 1,
+        "profile": {
+            "name": "Amr",
+            "phone": "01011111111",
+            "email": "amr@test.com",
+            "gender": "male",
+            "age": 22,
+            "city": "Cairo",
+            "account_type": "business"
+            },
+        "security": {
+            "password": "1234",
+            "failed_attempts": 0,
+            "is_locked": False
+            },
+        "wallet": {
+            "balance_egp": 6000
+            },
+        "transactions": [],
+        "settings": {
+            "emergency_contact": []
+            },
+        "login_attempts": []
+    },
+    {
+        "id": 2,
+        "profile": {
+            "name": "Gehad",
+            "phone": "01022222222",
+            "email": "gehad@test.com",
+            "gender": "female",
+            "age": 22,
+            "city": "Giza",
+            "account_type": "personal"
+            },
+        "security": {
+            "password": "1234",
+            "failed_attempts": 0,
+            "is_locked": False
+        },
+        "wallet": {
+            "balance_egp": 1500
+            },
+        "transactions": [],
+        "settings": {
+            "emergency_contact": []
+            },
+        "login_attempts": []
+    },
+    {
+        "id": 3,
+        "profile": {
+            "name": "Raghd",
+            "phone": "01033333333",
+            "email": "raghd@test.com",
+            "gender": "female",
+            "age": 22,
+            "city": "Alexandria",
+            "account_type": "personal"
+            },
+        "security": {
+            "password": "1234",
+            "failed_attempts": 0,
+            "is_locked": False
+            },
+        "wallet": {
+            "balance_egp": 200
+            },
+        "transactions": [],
+        "settings": {
+            "emergency_contact": []
+            },
+        "login_attempts": []
+    },
+]
+
+next_user_id = 4
+
+# Sets used for report / segment analysis (Q5 - Amr)
+active_users = set()          # users who logged in successfully at least once
+vip_users = set()             # users flagged as VIP (balance >= VIP_THRESHOLD)
+failed_login_users = set()    # users who failed a login attempt
+users_with_transfers = set()  # users who performed at least one transfer
+
+VIP_THRESHOLD = 5000  # EGP
+
+# 4x4 two-dimensional list representing ATM availability (Q3 - Amr)
+# 1 = Available, 0 = Out of Service
+atm_matrix = [
+    [1, 0, 1, 1],
+    [1, 1, 0, 1],
+    [0, 1, 1, 0],
+    [1, 0, 1, 1],
+]
+
+# mark any seed users who already qualify as VIP based on starting balance
+for _u in user_data:
+    if _u["wallet"]["balance_egp"] >= VIP_THRESHOLD:
+        vip_users.add(_u["id"])
+
+
+# ==================================================================
+# Q3 / Q4 / Q5 - Amr's functions
+# (ATM matrix, account settings, reports & set analysis)
+# ==================================================================
+
+def update_personal_info(user):
+    while True:
+        print("\n*************** Update Personal Information ***************")
+        print("[0] Change city")
+        print("[1] Change phone number")
+        print("[2] Change password")
+        print("[3] Add emergency contact")
+        print("[4] Remove optional field")
+        print("[5] Show my profile")
+        print("[6] Back")
+        choice = input("> ").strip()
+        if choice in ("0", "1", "2", "3", "4"):
+            # snapshot the profile before any risky update (copy/deepcopy scenario)
+            snapshot = copy.deepcopy(user["profile"])
+            user["settings"]["last_snapshot"] = snapshot
+            print("Profile snapshot saved before changes.")
+        if choice == "0":
+            new_city = input("New city: ").strip()
+            user["profile"].update({"city": new_city})
+            print("City updated successfully.")
+        elif choice == "1":
+            new_phone = input("New phone: ").strip()
+            user["profile"]["phone"] = new_phone
+            print("Phone number updated successfully.")
+        elif choice == "2":
+            new_password = input("New password: ").strip()
+            user["security"]["password"] = new_password
+            print("Password updated successfully.")
+        elif choice == "3":
+            contact = input("Emergency contact (name & phone): ").strip()
+            user["settings"]["emergency_contact"].append(contact)
+            print("Emergency contact added successfully.")
+        elif choice == "4":
+            field = input("Which do you want to clear? (emergency_contact/last_snapshot): ").strip()
+            if field == "emergency_contact":
+                if user["settings"]["emergency_contact"]:
+                    removed = user["settings"]["emergency_contact"].pop()
+                    print(f"Removed last emergency contact: {removed}")
+                else:
+                    print("No emergency contacts to remove.")
+            else:
+                removed = user["settings"].pop(field, None)
+                if removed is not None:
+                    print(f"Removed field '{field}'.")
+                else:
+                    print("Field not found or already empty.")
+        elif choice == "5":
+            show_profile(user)
+        elif choice == "6":
+            break
+        else:
+            print("Invalid choice, please try again.")
+
+
+def show_profile(user):
+    print("\n--- Profile ---")
+    for key, value in user["profile"].items():
+        print(f"  {key}: {value}")
+    print(f"  balance_egp: {round(user['wallet']['balance_egp'], 2)}")
+    print(f"  emergency_contacts: {user['settings']['emergency_contact']}")
+
+
+def admin_report_all_users():
+    print("\n--- All Users (Admin Report) ---")
+    for u in user_data:
+        uid = u["id"]
+        name = u["profile"]["name"]
+        print(f"  ID: {uid} | Name: {name}")
+
+
+def print_atm_matrix():
+    print("\n*************** ATM Availability ***************")
+    num_cols = max(len(row) for row in atm_matrix)
+    header = "      " + "".join(f"C{c:<3}" for c in range(num_cols))
+    print(header)
+    for r, row in enumerate(atm_matrix):
+        line = f"Row {r} "
+        for c in range(num_cols):
+            if c < len(row):
+                line += f" {row[c]:<3}"
+            else:
+                line += "  -  "
+        print(line)
+    available = sum(cell for row in atm_matrix for cell in row)
+    total = sum(len(row) for row in atm_matrix)
+    print(f"\nAvailable ATMs: {available}")
+    print(f"Out of service: {total - available}")
+
+
+def update_atm_status():
+    print_atm_matrix()
+    try:
+        row = int(input("Update ATM? row= ").strip())
+        col = int(input("col= ").strip())
+        status = int(input("new status (1=available, 0=out of service)= ").strip())
+    except ValueError:
+        print("Row, column and status must be numbers.")
+        return
+    if row < 0 or row >= len(atm_matrix) or col < 0 or col >= len(atm_matrix[row]):
+        print("Invalid row/column for the current matrix shape.")
+        return
+    if status not in (0, 1):
+        print("Status must be 0 or 1.")
+        return
+    atm_matrix[row][col] = status
+    print(f"ATM at row={row}, col={col} updated to status={status}.")
+
+
+def duplicate_check_report():
+    seen_phones = {}
+    seen_emails = {}
+    dup_phones = set()
+    dup_emails = set()
+    for u in user_data:
+        phone = u["profile"]["phone"]
+        email = u["profile"]["email"]
+        if phone in seen_phones:
+            dup_phones.add(phone)
+        seen_phones[phone] = seen_phones.get(phone, 0) + 1
+        if email in seen_emails:
+            dup_emails.add(email)
+        seen_emails[email] = seen_emails.get(email, 0) + 1
+    print("\n--- Duplicate Detection ---")
+    print(f"Duplicate phone numbers: {dup_phones if dup_phones else 'None'}")
+    print(f"Duplicate emails: {dup_emails if dup_emails else 'None'}")
+
+
+def transaction_frequency_report():
+    frequency = defaultdict(int)
+    for u in user_data:
+        for t in u["transactions"]:
+            frequency[t["type"]] += 1
+    print("\n--- Transaction Frequency Report ---")
+    if not frequency:
+        print("No transactions recorded yet.")
+        return
+    for tx_type, count in frequency.items():
+        print(f"  {tx_type}: {count}")
+
+
+def user_segment_report():
+    print("\n--- User Segment Report ---")
+    print(f"Active users: {active_users if active_users else 'None'}")
+    print(f"VIP users: {vip_users if vip_users else 'None'}")
+    print(f"Users with failed logins: {failed_login_users if failed_login_users else 'None'}")
+    print(f"Users with transfers: {users_with_transfers if users_with_transfers else 'None'}")
+
+
+def vip_vs_active_analysis():
+    print("\n--- VIP vs Active Users Analysis ---")
+    print(f"Active users: {active_users}")
+    print(f"VIP users: {vip_users}")
+    print(f"Active VIP users: {active_users & vip_users}")
+    print(f"Active but not VIP: {active_users - vip_users}")
+    print(f"VIP but not active: {vip_users - active_users}")
+    print(f"Union (active or VIP): {active_users | vip_users}")
+    print(f"Symmetric difference: {active_users ^ vip_users}")
+
+
+def membership_test():
+    id_raw = input("Enter user ID to check segment membership: ").strip()
+    if not id_raw.isdigit():
+        print("Invalid ID.")
+        return
+    uid = int(id_raw)
+    print(f"  In active_users: {uid in active_users}")
+    print(f"  In vip_users: {uid in vip_users}")
+    print(f"  Not in failed_login_users: {uid not in failed_login_users}")
+
+
+def admin_reports_menu():
+    while True:
+        print("\n**************** Admin Reports ****************")
+        print("[0] Duplicate phone/email check")
+        print("[1] Transaction frequency report")
+        print("[2] User segment report")
+        print("[3] VIP vs active users analysis")
+        print("[4] Membership test for a user")
+        print("[5] Back")
+        choice = input("> ").strip()
+        if choice == "0":
+            duplicate_check_report()
+        elif choice == "1":
+            transaction_frequency_report()
+        elif choice == "2":
+            user_segment_report()
+        elif choice == "3":
+            vip_vs_active_analysis()
+        elif choice == "4":
+            membership_test()
+        elif choice == "5":
+            break
+        else:
+            print("Invalid choice, please try again.")
+
+
+# ==================================================================
+# Q1 - Gehad's core system (home page, registration, login)
+# ==================================================================
+
+main_menu = "*************** SIC SMART BANK SYSTEM ***************\n\
+If you already have an account, enter login\n\
+If you do not have an account, enter register\n\
+To close the system, enter exit\n"
+
+
+while True:
+    print(f"\n{main_menu}\n")
+    current_user = None
+    failed_attempts = 0
+
+    operation = input("> ").lower().replace(" ", "")
+    if operation not in ["login", "register", "exit"]:
+        print("Invalid operation")
+        continue
+
+    # Login by ID or Email
+    if operation == "login":
+        is_login_canceled = False
+
+        while True:
+            login_method = input("Login by ID or Email or Exit > (or type 'exit' to cancel) > ").lower().replace(" ", "")
+
+            if login_method == "exit":
+                print("Returning to main menu...")
+                break
+
+            elif login_method == "id":
+                while failed_attempts != 3:
+                    user_id = input("Enter your account id > ")
+
+                    if user_id.lower() == "exit":
+                        print("Returning to main menu...")
+                        is_login_canceled = True
+                        break
+
+                    try:
+                        user_id = int(user_id)
+                    except ValueError:
+                        print("Invalid input! ID must be a number.")
+                        failed_attempts += 1
+                        continue
+
+                    for user in user_data:
+                        if user["id"] == user_id:
+                            current_user = user
+                            break
+
+                    if current_user is not None:
+                        print(f"Account found: {current_user['profile']['name']}")
+                        break
+                    else:
+                        failed_attempts += 1
+                        if failed_attempts < 3:
+                            trials = input("Invalid account id\n Want to try again (yes/no) > ").strip().lower()
+                            if trials in ["n", "no"]:
+                                print("You exit successfully")
+                                is_login_canceled = True
+                                break
+                        else:
+                            print("Too many failed attempts!")
+                            is_login_canceled = True
+                            break
+
+            # Login by Email
+            elif login_method == "email":
+                while failed_attempts != 3:
+                    user_email = input("Enter your account email > ").lower().replace(" ", "")
+
+                    if user_email == "exit":
+                        print("Returning to main menu...")
+                        is_login_canceled = True
+                        break
+
+                    for user in user_data:
+                        if user_email == user["profile"]["email"]:
+                            current_user = user
+                            break
+
+                    if current_user is not None:
+                        print(f"Account found: {current_user['profile']['name']}")
+                        break
+                    else:
+                        failed_attempts += 1
+                        if failed_attempts < 3:
+                            trials = input("Invalid account email\n Want to try again (yes/no) > ").strip().lower()
+                            if trials in ["n", "no"]:
+                                print("You exit successfully")
+                                is_login_canceled = True
+                                break
+                        else:
+                            print("Too many failed attempts!")
+                            is_login_canceled = True
+                            break
+            else:
+                print("Invalid choice! Please type 'id' or 'email'.")
+
+            if is_login_canceled:
+                break
+
+            # Password
+            if current_user is not None:
+                if current_user["security"]["is_locked"] == True:
+                    current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+                    current_user["login_attempts"].append(f"Login Denied (Account Locked) at {current_time}")
+                    print("Your account is locked")
+                    is_login_canceled = True
+                else:
+                    while failed_attempts != 3:
+                        user_password = input("Enter your account password > (or type 'exit' to cancel) >").strip()
+
+                        if user_password.lower() == "exit":
+                            print("Returning to main menu...")
+                            is_login_canceled = True
+                            break
+
+                        if current_user["security"]["password"] == user_password:
+                            current_user["security"]["failed_attempts"] = 0
+                            print(f"Logged in seccessfully {current_user['profile']['name']}\n")
+                            current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+                            current_user["login_attempts"].append(f"Success Login at {current_time}")
+                            active_users.add(current_user["id"])  # Q5 set tracking
+
+                            recent_attempts = current_user["login_attempts"][-3:]
+                            print(f"Recent Login History: {recent_attempts}")
+
+                            # ==========================================
+                            # Q2 - Raghd's wallet & transactions menu
+                            # ==========================================
+                            while True:
+                                print(f"\n*************** Welcome back {current_user['profile']['name']} ***************")
+                                print("[0] Deposit")
+                                print("[1] Withdraw")
+                                print("[2] Transfer")
+                                print("[3] Transaction history")
+                                print("[4] Reports")
+                                print("[5] Branch/ATM status")
+                                print("[6] Update personal info")
+                                print("[7] Logout")
+
+                                wallet_choice = input("\n> ").strip()
+
+                                # deposit
+                                if wallet_choice == "0":
+                                    print()
+                                    print("========== DEPOSIT ==========")
+                                    user_input = input("Enter amount and currency, example: 20 USD: ")
+                                    parts = user_input.split()
+
+                                    if len(parts) != 2:
+                                        print("Invalid format!")
+                                        print("Example: 20 USD")
+                                        continue
+
+                                    try:
+                                        amount = float(parts[0])
+                                    except ValueError:
+                                        print("Please enter a valid number!")
+                                        continue
+
+                                    currency = parts[1].upper()
+
+                                    if amount <= 0:
+                                        print("Amount must be positive!")
+                                        continue
+
+                                    if currency not in ["EGP", "USD", "SAR"]:
+                                        print("Unsupported currency!")
+                                        print("Allowed currencies: EGP, USD, SAR")
+                                        continue
+
+                                    if currency == "EGP":
+                                        egp_amount = amount
+                                    elif currency == "USD":
+                                        egp_amount = amount * 30
+                                    else:
+                                        egp_amount = amount * 9
+
+                                    current_user["wallet"]["balance_egp"] += egp_amount
+                                    current_user["transactions"].append({
+                                        "type": "deposit",
+                                        "amount_egp": round(egp_amount, 2),
+                                        "currency": currency,
+                                        "original_amount": amount,
+                                        "date": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                    })
+
+                                    # Q5: promote to VIP once balance crosses the threshold
+                                    if current_user["wallet"]["balance_egp"] >= VIP_THRESHOLD:
+                                        vip_users.add(current_user["id"])
+
+                                    print()
+                                    print("Deposit successful!")
+                                    print("Added:", egp_amount, "EGP")
+                                    print("Current balance:", current_user["wallet"]["balance_egp"], "EGP")
+
+                                # withdraw
+                                elif wallet_choice == "1":
+                                    print("========== WITHDRAW ==========")
+                                    user_input = input("Enter amount and currency, example: 20 USD: ")
+                                    parts = user_input.split()
+
+                                    if len(parts) != 2:
+                                        print("Invalid format!")
+                                        print("Example: 20 USD")
+                                        continue
+
+                                    try:
+                                        amount = float(parts[0])
+                                    except ValueError:
+                                        print("Please enter a valid number!")
+                                        continue
+
+                                    currency = parts[1].upper()
+
+                                    if amount <= 0:
+                                        print("Amount must be positive!")
+                                        continue
+
+                                    if currency not in ["EGP", "USD", "SAR"]:
+                                        print("Unsupported currency!")
+                                        print("Allowed currencies: EGP, USD, SAR")
+                                        continue
+
+                                    if currency == "EGP":
+                                        egp_amount = amount
+                                    elif currency == "USD":
+                                        egp_amount = amount * 30
+                                    else:
+                                        egp_amount = amount * 9
+
+                                    if egp_amount > current_user["wallet"]["balance_egp"]:
+                                        print("Insufficient balance!")
+                                        print("Your balance is:", current_user["wallet"]["balance_egp"], "EGP")
+                                        continue
+
+                                    current_user["wallet"]["balance_egp"] -= egp_amount
+                                    current_user["transactions"].append({
+                                        "type": "withdraw",
+                                        "amount_egp": round(egp_amount, 2),
+                                        "currency": currency,
+                                        "original_amount": amount,
+                                        "date": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                    })
+
+                                    print()
+                                    print("Withdrawal successful!")
+                                    print("Removed:", egp_amount, "EGP")
+                                    print("Current balance:", current_user["wallet"]["balance_egp"], "EGP")
+
+                                # transfer
+                                elif wallet_choice == "2":
+                                    print("========== TRANSFER ==========")
+
+                                    try:
+                                        receiver_id = int(input("Enter receiver ID: "))
+                                    except ValueError:
+                                        print("Invalid receiver ID!")
+                                        continue
+
+                                    receiver = None
+                                    for user in user_data:
+                                        if user["id"] == receiver_id:
+                                            receiver = user
+                                            break
+
+                                    if receiver is None:
+                                        print("Receiver not found!")
+                                        continue
+
+                                    if receiver["id"] == current_user["id"]:
+                                        print("You cannot transfer money to yourself!")
+                                        continue
+
+                                    user_input = input("Enter amount and currency, example: 20 USD: ")
+                                    parts = user_input.split()
+
+                                    if len(parts) != 2:
+                                        print("Invalid format!")
+                                        print("Example: 20 USD")
+                                        continue
+
+                                    try:
+                                        amount = float(parts[0])
+                                    except ValueError:
+                                        print("Please enter a valid number!")
+                                        continue
+
+                                    currency = parts[1].upper()
+
+                                    if amount <= 0:
+                                        print("Amount must be positive!")
+                                        continue
+
+                                    if currency not in ["EGP", "USD", "SAR"]:
+                                        print("Unsupported currency!")
+                                        print("Allowed currencies: EGP, USD, SAR")
+                                        continue
+
+                                    if currency == "EGP":
+                                        egp_amount = amount
+                                    elif currency == "USD":
+                                        egp_amount = amount * 30
+                                    else:
+                                        egp_amount = amount * 9
+
+                                    if egp_amount > current_user["wallet"]["balance_egp"]:
+                                        print("Insufficient balance!")
+                                        print("Your balance is:", current_user["wallet"]["balance_egp"], "EGP")
+                                        continue
+
+                                    current_user["wallet"]["balance_egp"] -= egp_amount
+                                    receiver["wallet"]["balance_egp"] += egp_amount
+
+                                    tx_time = time.strftime("%Y-%m-%d %H:%M:%S")
+                                    current_user["transactions"].append({
+                                        "type": "transfer_out",
+                                        "amount_egp": round(egp_amount, 2),
+                                        "currency": currency,
+                                        "to_id": receiver["id"],
+                                        "date": tx_time,
+                                    })
+                                    receiver["transactions"].append({
+                                        "type": "transfer_in",
+                                        "amount_egp": round(egp_amount, 2),
+                                        "currency": currency,
+                                        "from_id": current_user["id"],
+                                        "date": tx_time,
+                                    })
+
+                                    # Q5: track transfer activity + re-check VIP for both accounts
+                                    users_with_transfers.add(current_user["id"])
+                                    if receiver["wallet"]["balance_egp"] >= VIP_THRESHOLD:
+                                        vip_users.add(receiver["id"])
+
+                                    print()
+                                    print("Transfer successful!")
+                                    print("Transferred to:", receiver["profile"]["name"])
+                                    print("Amount:", amount, currency)
+                                    print("Current balance:", current_user["wallet"]["balance_egp"], "EGP")
+
+                                # transaction history
+                                elif wallet_choice == "3":
+                                    print("========== TRANSACTION HISTORY ==========")
+
+                                    transactions = current_user["transactions"]
+
+                                    if len(transactions) == 0:
+                                        print("No transactions yet!")
+                                    else:
+                                        print()
+                                        print("First transaction:")
+                                        t = transactions[0]
+                                        print(f"{t['date']} | {t['type']} | {t['amount_egp']} EGP")
+
+                                        print()
+                                        print("Last transaction:")
+                                        t = transactions[-1]
+                                        print(f"{t['date']} | {t['type']} | {t['amount_egp']} EGP")
+
+                                        print()
+                                        print("Last 5 transactions:")
+                                        for t in transactions[-5:]:
+                                            print(f"- {t['date']} | {t['type']} | {t['amount_egp']} EGP")
+
+                                # reports (Q5 - Amr's admin reports menu)
+                                elif wallet_choice == "4":
+                                    admin_reports_menu()
+
+                                # branch / ATM status (Q3 - Amr's ATM matrix)
+                                elif wallet_choice == "5":
+                                    print_atm_matrix()
+                                    if current_user["profile"]["account_type"] == "business":
+                                        edit = input("Update an ATM status? (y/n): ").strip().lower()
+                                        if edit == "y":
+                                            update_atm_status()
+
+                                # update personal info (Q4 - Amr's version)
+                                elif wallet_choice == "6":
+                                    update_personal_info(current_user)
+
+                                # logout
+                                elif wallet_choice == "7":
+                                    print("Thank you for using our wallet,", current_user["profile"]["name"] + "!")
+                                    print("Logged out successfully.")
+                                    is_login_canceled = True
+                                    break
+
+                                else:
+                                    print("Invalid choice!")
+                                    print("Please choose a number from 0 to 7.")
+                            break
+
+                        else:
+                            current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+                            current_user["login_attempts"].append(f"Failed Login at {current_time}")
+                            failed_attempts += 1
+                            current_user["security"]["failed_attempts"] = failed_attempts
+                            failed_login_users.add(current_user["id"])  # Q5 set tracking
+                            if failed_attempts < 3:
+                                trials = input("Wrong password\n Want to try again (yes/no) > ").strip().lower()
+                                if trials in ["n", "no"]:
+                                    print("You exit successfully")
+                                    is_login_canceled = True
+                                    break
+                            else:
+                                print("Too many failed attempts!")
+                                is_login_canceled = True
+                                current_user["security"]["is_locked"] = True
+                if is_login_canceled:
+                    break
+
+    elif operation == "register":
+        is_canceled = False
+
+        # Name
+        while True:
+            user_name = input("Enter your name (or type 'exit' to cancel): ").strip()
+            if user_name.lower() == "exit":
+                is_canceled = True
+                break
+
+            if user_name:
+                break
+            print("Name cannot be empty!")
+
+        if is_canceled:
+            print("Registration canceled.")
+            continue
+
+        # Password
+        while True:
+            user_password = input("Please enter your password > ").strip()
+            if user_password.lower() == "exit":
+                is_canceled = True
+                break
+
+            if not user_password:
+                print("Password cannot be empty!")
+                continue
+
+            if len(user_password) < 4:
+                print("Password too short! Must be at least 4 characters long.")
+                continue
+            break
+
+        if is_canceled:
+            print("Registration canceled.")
+            continue
+
+        # Phone
+        while True:
+            user_phone = input("Please enter your phone number (or type 'exit' to cancel) > ").strip().lower()
+
+            if user_phone == "exit":
+                is_canceled = True
+                break
+
+            try:
+                int(user_phone)
+                if len(user_phone) == 11 and user_phone.startswith("01"):
+                    break
+                else:
+                    print("Invalid phone number!")
+            except ValueError:
+                print("Invalid phone number! Must contain digits only.")
+
+        if is_canceled:
+            print("Registration canceled.")
+            continue
+
+        # Email
+        while True:
+            user_email = input("Please enter your email (or type 'exit' to cancel) > ").strip().lower()
+
+            if user_email == "exit":
+                is_canceled = True
+                break
+
+            if user_email.count("@") == 1:
+                domain = user_email.split("@")[1]
+                if "." in domain and not domain.startswith(".") and not domain.endswith("."):
+                    break
+                else:
+                    print("Invalid email domain format!")
+            else:
+                print("Invalid email! Email must contain exactly one '@' symbol.")
+
+        if is_canceled:
+            print("Registration canceled.")
+            continue
+
+        # Gender
+        while True:
+            user_gender = input("Please enter your gender (male/female) (or type 'exit' to cancel) > ").strip().lower()
+
+            if user_gender == "exit":
+                is_canceled = True
+                break
+
+            if user_gender in ["male", "female"]:
+                break
+            else:
+                print("Invalid choice! Choose 'male' or 'female'.")
+
+        if is_canceled:
+            print("Registration canceled.")
+            continue
+
+        # Age
+        while True:
+            age_input = input("Please enter your age (or type 'exit' to cancel) > ").strip().lower()
+
+            if age_input == "exit":
+                is_canceled = True
+                break
+
+            try:
+                user_age = int(age_input)
+                if 18 <= user_age <= 100:
+                    break
+                else:
+                    print("Please enter a valid age between 18 and 100.")
+            except ValueError:
+                print("Invalid age!")
+
+        if is_canceled:
+            print("Registration canceled.")
+            continue
+
+        # City
+        while True:
+            user_city = input("Please enter your city > ").strip()
+
+            if user_city.lower() == "exit":
+                is_canceled = True
+                break
+
+            if user_city:
+                user_city = user_city.title()
+                break
+            print("City cannot be empty!")
+
+        if is_canceled:
+            print("Registration canceled.")
+            continue
+
+        # Account Type
+        while True:
+            account_type = input("Please enter account type (personal/business) (or type 'exit' to cancel) > ").strip().lower()
+            if account_type == "exit":
+                is_canceled = True
+                break
+
+            if account_type in ["personal", "business"]:
+                break
+            else:
+                print("Invalid choice! Choose 'personal' or 'business'.")
+
+        if is_canceled:
+            print("Registration canceled.")
+            continue
+
+        # Check duplication for phone and email
+        is_duplicate = False
+        for user in user_data:
+            if user_phone == user["profile"]["phone"] and user_email == user["profile"]["email"]:
+                print("This account already exist try to login")
+                is_duplicate = True
+                break
+            elif user_phone == user["profile"]["phone"]:
+                print("This phone number already exist try to login")
+                is_duplicate = True
+                break
+            elif user_email == user["profile"]["email"]:
+                print("This email already exist try to login")
+                is_duplicate = True
+                break
+
+        # Update User Data
+        if not is_duplicate:
+            new_user = {
+                "id": next_user_id,
+                "profile": {
+                    "name": user_name,
+                    "phone": user_phone,
+                    "email": user_email,
+                    "gender": user_gender,
+                    "age": user_age,
+                    "city": user_city,
+                    "account_type": account_type
+                },
+                "security": {
+                    "password": user_password,
+                    "failed_attempts": 0,
+                    "is_locked": False
+                },
+                "wallet": {
+                    "balance_egp": 0.0
+                },
+                "transactions": [],
+                "settings": {
+                    "emergency_contact": []
+                },
+                "login_attempts": []
+            }
+
+            """
+            Using deepcopy to create an independent copy of the user dictionary,
+            ensuring that nested objects/data inside new_user are completely isolated
+            from future modifications when stored in user_data.
+            """
+            final_user_record = copy.deepcopy(new_user)
+
+            user_data.append(final_user_record)
+
+            current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+            print(f"Sign up successful at {current_time} ! Your ID is {next_user_id}")
+
+            next_user_id += 1
+
+    elif operation == "exit":
+        break
+
+    else:
+        print("Invalid input please choose\n\
+        (login - register - exit)\n")
